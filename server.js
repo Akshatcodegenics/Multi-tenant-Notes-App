@@ -68,7 +68,7 @@ app.use((err, req, res, next) => {
 
 // 404 handler
 app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Initialize database and start server
