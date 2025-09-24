@@ -1,4 +1,4 @@
-Comment,require('dotenv').config();
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -16,7 +16,22 @@ const PORT = process.env.PORT || 3000;
 
 // Security middleware
 app.use(helmet({
-  contentSecurityPolicy: false, // Disable for development
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"]
+    }
+  },
+  xssFilter: true,
+  noSniff: true,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
 }));
 
 // Rate limiting
@@ -29,10 +44,11 @@ app.use(limiter);
 
 // CORS configuration
 app.use(cors({
-  origin: true, // Allow all origins for automated testing
+  origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:3000'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  maxAge: 86400 // 24 hours
 }));
 
 // Body parsing middleware
@@ -40,7 +56,19 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Serve static files from public directory
-app.use(express.static(path.join(__dirname, 'public')));
+const publicPath = path.join(__dirname, 'public');
+const indexPath = path.join(publicPath, 'index.html');
+
+// Ensure the public directory exists
+if (!require('fs').existsSync(publicPath)) {
+  console.error('Public directory not found. Creating directory...');
+  require('fs').mkdirSync(publicPath, { recursive: true });
+}
+
+// Serve static files with caching
+app.use(express.static(publicPath, {
+  maxAge: process.env.NODE_ENV === 'production' ? '1d' : 0
+}));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -52,9 +80,19 @@ app.use('/auth', authRoutes);
 app.use('/notes', authenticateToken, notesRoutes);
 app.use('/tenants', authenticateToken, tenantsRoutes);
 
-// Serve frontend for all other routes
+// API 404 handler (for API routes)
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ error: 'API endpoint not found' });
+});
+
+// Serve frontend for all other routes (SPA support)
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  // Check if index.html exists
+  if (require('fs').existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(404).json({ error: 'Application not built. Please run npm build first.' });
+  }
 });
 
 // Error handling middleware
