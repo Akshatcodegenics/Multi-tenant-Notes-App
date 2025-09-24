@@ -4,7 +4,7 @@
   "description": "Multi-tenant SaaS Notes Application with role-based access and subscription limits",
   "main": "server.js",
   "scripts": {
-    "start": "NODE_ENV=production node server.js",
+    "start": "set NODE_ENV=production&& node server.js",
     "dev": "NODE_ENV=development nodemon server.js",
     "build": "node build.js",
     "seed": "node scripts/seed.js",
