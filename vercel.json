@@ -4,37 +4,20 @@
     {
       "src": "server.js",
       "use": "@vercel/node"
-    },
-    {
-      "src": "public/**/*",
-      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
-      "src": "/health",
-      "dest": "/server.js"
-    },
-    {
-      "src": "/auth/(.*)",
-      "dest": "/server.js"
-    },
-    {
-      "src": "/notes/(.*)",
-      "dest": "/server.js"
-    },
-    {
-      "src": "/tenants/(.*)",
+      "src": "/api/v1/(.*)",
       "dest": "/server.js"
     },
     {
       "src": "/(.*)",
-      "dest": "/public/$1"
+      "dest": "/server.js"
     }
   ],
   "env": {
-    "JWT_SECRET": "multi-tenant-notes-saas-secret-key-2024",
     "NODE_ENV": "production",
-    "DATABASE_PATH": "/tmp/database.sqlite"
+    "VERCEL": "1"
   }
 }
