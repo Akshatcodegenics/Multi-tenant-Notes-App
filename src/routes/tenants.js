@@ -1,5 +1,4 @@
 const express = require('express');
-const { getDatabase } = require('../database/init');
 const { requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
@@ -13,6 +12,13 @@ router.post('/:slug/upgrade', requireAdmin, (req, res) => {
     return res.status(403).json({ error: 'You can only upgrade your own tenant' });
   }
 
+  let getDatabase;
+  try {
+    ({ getDatabase } = require('../database/init'));
+  } catch (e) {
+    console.error('DB module load failed in upgrade:', e);
+    return res.status(500).json({ error: 'Database unavailable' });
+  }
   const db = getDatabase();
 
   // Check current subscription status
@@ -66,6 +72,13 @@ router.get('/:slug', requireAdmin, (req, res) => {
     return res.status(403).json({ error: 'You can only view your own tenant information' });
   }
 
+  let getDatabase;
+  try {
+    ({ getDatabase } = require('../database/init'));
+  } catch (e) {
+    console.error('DB module load failed in tenant get:', e);
+    return res.status(500).json({ error: 'Database unavailable' });
+  }
   const db = getDatabase();
 
   db.get(
@@ -110,6 +123,13 @@ router.get('/:slug/users', requireAdmin, (req, res) => {
     return res.status(403).json({ error: 'You can only view users in your own tenant' });
   }
 
+  let getDatabase;
+  try {
+    ({ getDatabase } = require('../database/init'));
+  } catch (e) {
+    console.error('DB module load failed in list users:', e);
+    return res.status(500).json({ error: 'Database unavailable' });
+  }
   const db = getDatabase();
 
   db.all(

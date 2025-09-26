@@ -1,7 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { getDatabase } = require('../database/init');
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'development-insecure-secret'; // DO NOT use in production
@@ -15,6 +14,13 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
+    let getDatabase;
+    try {
+      ({ getDatabase } = require('../database/init'));
+    } catch (e) {
+      console.error('DB module load failed during login:', e);
+      return res.status(500).json({ error: 'Database unavailable' });
+    }
     const db = getDatabase();
     
     // Get user with tenant information
@@ -96,6 +102,13 @@ router.get('/me', (req, res) => {
       return res.status(403).json({ error: 'Invalid or expired token' });
     }
 
+    let getDatabase;
+    try {
+      ({ getDatabase } = require('../database/init'));
+    } catch (e) {
+      console.error('DB module load failed in /me:', e);
+      return res.status(500).json({ error: 'Database unavailable' });
+    }
     const db = getDatabase();
     db.get(
       `SELECT u.*, t.slug as tenant_slug, t.name as tenant_name, t.subscription_plan 

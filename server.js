@@ -4,8 +4,8 @@ const cors = require("cors");
 const helmet = require("helmet");
 const path = require("path");
 
-// Database init
-const { initializeDatabase } = require("./src/database/init");
+// IMPORTANT: Avoid importing DB at module load in serverless
+let initializeDatabase = null;
 
 // Routes and middleware
 const authRoutes = require("./src/routes/auth");
@@ -31,6 +31,10 @@ let dbInitError = null;
 async function ensureDbInitialized() {
   if (dbInitialized || dbInitError) return;
   try {
+    if (!initializeDatabase) {
+      // Lazy require to catch native module issues gracefully
+      ({ initializeDatabase } = require("./src/database/init"));
+    }
     await initializeDatabase();
     dbInitialized = true;
   } catch (e) {
@@ -75,9 +79,9 @@ const isVercel = !!process.env.VERCEL || !!process.env.NOW_REGION;
 const port = process.env.PORT || 3000;
 
 if (isVercel) {
-  // Export the app for Vercel Serverless Functions
-  module.exports = app;
-  // Ensure DB kicks off on cold start but do not crash the function
+  // Export an explicit handler for Vercel Serverless Functions
+  module.exports = (req, res) => app(req, res);
+  // Kick off DB init on cold start (best-effort)
   ensureDbInitialized();
 } else {
   // Local/dev server with listener

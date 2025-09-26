@@ -1,5 +1,4 @@
 const express = require('express');
-const { getDatabase } = require('../database/init');
 
 const router = express.Router();
 
@@ -36,6 +35,13 @@ function checkNoteLimit(tenantId, callback) {
 
 // GET /notes - List all notes for the current tenant
 router.get('/', (req, res) => {
+  let getDatabase;
+  try {
+    ({ getDatabase } = require('../database/init'));
+  } catch (e) {
+    console.error('DB module load failed in notes list:', e);
+    return res.status(500).json({ error: 'Database unavailable' });
+  }
   const db = getDatabase();
   
   db.all(
@@ -76,6 +82,13 @@ router.get('/:id', (req, res) => {
     return res.status(400).json({ error: 'Invalid note ID' });
   }
 
+  let getDatabase;
+  try {
+    ({ getDatabase } = require('../database/init'));
+  } catch (e) {
+    console.error('DB module load failed in note fetch:', e);
+    return res.status(500).json({ error: 'Database unavailable' });
+  }
   const db = getDatabase();
   
   db.get(
@@ -134,6 +147,13 @@ router.post('/', (req, res) => {
       });
     }
 
+    let getDatabase;
+    try {
+      ({ getDatabase } = require('../database/init'));
+    } catch (e) {
+      console.error('DB module load failed in note create:', e);
+      return res.status(500).json({ error: 'Database unavailable' });
+    }
     const db = getDatabase();
     
     db.run(
@@ -188,6 +208,13 @@ router.put('/:id', (req, res) => {
     return res.status(400).json({ error: 'Title is required' });
   }
 
+  let getDatabase;
+  try {
+    ({ getDatabase } = require('../database/init'));
+  } catch (e) {
+    console.error('DB module load failed in note update:', e);
+    return res.status(500).json({ error: 'Database unavailable' });
+  }
   const db = getDatabase();
 
   // First, verify the note exists and belongs to the current tenant
@@ -253,6 +280,13 @@ router.delete('/:id', (req, res) => {
     return res.status(400).json({ error: 'Invalid note ID' });
   }
 
+  let getDatabase;
+  try {
+    ({ getDatabase } = require('../database/init'));
+  } catch (e) {
+    console.error('DB module load failed in note delete:', e);
+    return res.status(500).json({ error: 'Database unavailable' });
+  }
   const db = getDatabase();
 
   // First, verify the note exists and belongs to the current tenant
@@ -292,6 +326,13 @@ router.post('/:id/toggle-sticky', (req, res) => {
   if (isNaN(noteId)) {
     return res.status(400).json({ error: 'Invalid note ID' });
   }
+  let getDatabase;
+  try {
+    ({ getDatabase } = require('../database/init'));
+  } catch (e) {
+    console.error('DB module load failed in toggle-sticky:', e);
+    return res.status(500).json({ error: 'Database unavailable' });
+  }
   const db = getDatabase();
   db.get('SELECT * FROM notes WHERE id = ? AND tenant_id = ?', [noteId, req.user.tenantId], (err, note) => {
     if (err) return res.status(500).json({ error: 'Internal server error' });
@@ -307,6 +348,13 @@ router.post('/:id/toggle-sticky', (req, res) => {
 
 // GET /notes/recommendations - AI-like recommendations (rule-based demo)
 router.get('/recommendations', (req, res) => {
+  let getDatabase;
+  try {
+    ({ getDatabase } = require('../database/init'));
+  } catch (e) {
+    console.error('DB module load failed in recommendations:', e);
+    return res.status(500).json({ error: 'Database unavailable' });
+  }
   const db = getDatabase();
   // Simple heuristic recommendations: suggest recent notes or sticky notes
   db.all(

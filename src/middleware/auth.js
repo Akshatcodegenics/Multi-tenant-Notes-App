@@ -1,5 +1,4 @@
 const jwt = require('jsonwebtoken');
-const { getDatabase } = require('../database/init');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'development-insecure-secret'; // DO NOT use in production
 
@@ -17,6 +16,13 @@ function authenticateToken(req, res, next) {
     }
 
     // Verify user still exists and get current user data
+    let getDatabase;
+    try {
+      ({ getDatabase } = require('../database/init'));
+    } catch (e) {
+      console.error('DB module load failed in auth middleware:', e);
+      return res.status(500).json({ error: 'Database unavailable' });
+    }
     const db = getDatabase();
     db.get(
       `SELECT u.*, t.slug as tenant_slug, t.name as tenant_name, t.subscription_plan 
