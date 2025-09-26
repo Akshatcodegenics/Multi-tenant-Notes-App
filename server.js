@@ -43,8 +43,8 @@ async function ensureDbInitialized() {
   }
 }
 
-// Lazy init middleware to avoid cold-start crashes on Vercel
-app.use(async (req, res, next) => {
+// Apply DB init only for API routes to prevent homepage crash
+const requireDb = async (req, res, next) => {
   if (!dbInitialized && !dbInitError) {
     await ensureDbInitialized();
   }
@@ -52,12 +52,12 @@ app.use(async (req, res, next) => {
     return res.status(500).json({ error: "Database initialization failed" });
   }
   return next();
-});
+};
 
 // API routes
-app.use("/auth", authRoutes);
-app.use("/notes", authenticateToken, notesRoutes);
-app.use("/tenants", authenticateToken, tenantsRoutes);
+app.use("/auth", requireDb, authRoutes);
+app.use("/notes", requireDb, authenticateToken, notesRoutes);
+app.use("/tenants", requireDb, authenticateToken, tenantsRoutes);
 
 // Serve static frontend
 const publicDir = path.join(__dirname, "public");
@@ -75,20 +75,24 @@ app.get(["/health", "/auth/*", "/notes/*", "/tenants/*", "/:any*"], (req, res, n
   return res.sendFile(path.join(publicDir, "index.html"));
 });
 
+// Global error logging (helps Vercel logs)
+process.on('unhandledRejection', (reason) => {
+  console.error('UnhandledRejection:', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('UncaughtException:', err);
+});
+
 const isVercel = !!process.env.VERCEL || !!process.env.NOW_REGION;
 const port = process.env.PORT || 3000;
 
 if (isVercel) {
   // Export an explicit handler for Vercel Serverless Functions
   module.exports = (req, res) => app(req, res);
-  // Kick off DB init on cold start (best-effort)
-  ensureDbInitialized();
+  // Do not force DB init here; only on API routes via requireDb
 } else {
   // Local/dev server with listener
-  ensureDbInitialized()
-    .finally(() => {
-      app.listen(port, () => {
-        console.log(`Server running on http://localhost:${port}`);
-      });
-    });
+  app.listen(port, () => {
+    console.log(`Server running on http://localhost:${port}`);
+  });
 }
