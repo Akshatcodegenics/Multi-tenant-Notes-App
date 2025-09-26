@@ -1,13 +1,25 @@
 const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcryptjs');
 const path = require('path');
+const fs = require('fs');
 
-const DB_PATH = process.env.DATABASE_PATH || './database.sqlite';
+// Prefer explicit DATABASE_PATH; on Vercel (serverless) default to /tmp which is writable
+const DB_PATH = process.env.DATABASE_PATH || (process.env.VERCEL ? '/tmp/database.sqlite' : './database.sqlite');
 
 let db;
 
 function getDatabase() {
   if (!db) {
+    // Ensure directory exists for DB path if not /:memory:
+    try {
+      const dir = path.dirname(DB_PATH);
+      if (dir && dir !== ':' && !fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+    } catch (e) {
+      console.warn('Could not ensure DB directory exists:', e.message);
+    }
+
     db = new sqlite3.Database(DB_PATH, (err) => {
       if (err) {
         console.error('Error opening database:', err);

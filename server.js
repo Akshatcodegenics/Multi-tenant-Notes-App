@@ -17,12 +17,37 @@ const app = express();
 
 // Security & body parsing
 app.use(helmet());
-app.use(cors()); // In this demo, allow all origins. You can restrict with ALLOWED_ORIGINS env.
+app.use(cors()); // Allow all origins for demo; restrict via ALLOWED_ORIGINS in production
 app.use(express.json());
 
 // Health check
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
+});
+
+// Ensure DB is initialized before handling API routes (safe for serverless)
+let dbInitialized = false;
+let dbInitError = null;
+async function ensureDbInitialized() {
+  if (dbInitialized || dbInitError) return;
+  try {
+    await initializeDatabase();
+    dbInitialized = true;
+  } catch (e) {
+    dbInitError = e;
+    console.error("Database initialization failed:", e);
+  }
+}
+
+// Lazy init middleware to avoid cold-start crashes on Vercel
+app.use(async (req, res, next) => {
+  if (!dbInitialized && !dbInitError) {
+    await ensureDbInitialized();
+  }
+  if (dbInitError) {
+    return res.status(500).json({ error: "Database initialization failed" });
+  }
+  return next();
 });
 
 // API routes
@@ -41,22 +66,25 @@ app.get("/", (req, res) => {
 
 // Fallback: for any other non-API path, serve index.html (supports client-side routing)
 app.get(["/health", "/auth/*", "/notes/*", "/tenants/*", "/:any*"], (req, res, next) => {
-  // If request looks like API (already handled), skip
   if (req.path.startsWith("/api")) return next();
-  // If a direct file exists (e.g., CSS/JS), let static middleware handle it
   if (req.path.includes(".")) return next();
   return res.sendFile(path.join(publicDir, "index.html"));
 });
 
+const isVercel = !!process.env.VERCEL || !!process.env.NOW_REGION;
 const port = process.env.PORT || 3000;
 
-initializeDatabase()
-  .then(() => {
-    app.listen(port, () => {
-      console.log(`Server running on http://localhost:${port}`);
+if (isVercel) {
+  // Export the app for Vercel Serverless Functions
+  module.exports = app;
+  // Ensure DB kicks off on cold start but do not crash the function
+  ensureDbInitialized();
+} else {
+  // Local/dev server with listener
+  ensureDbInitialized()
+    .finally(() => {
+      app.listen(port, () => {
+        console.log(`Server running on http://localhost:${port}`);
+      });
     });
-  })
-  .catch((err) => {
-    console.error("Failed to initialize database:", err);
-    process.exit(1);
-  });
+}

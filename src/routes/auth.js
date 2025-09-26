@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const { getDatabase } = require('../database/init');
 
 const router = express.Router();
+const JWT_SECRET = process.env.JWT_SECRET || 'development-insecure-secret'; // DO NOT use in production
 
 // Login endpoint
 router.post('/login', async (req, res) => {
@@ -40,17 +41,23 @@ router.post('/login', async (req, res) => {
         }
 
         // Generate JWT token
-        const token = jwt.sign(
-          { 
-            userId: user.id,
-            email: user.email,
-            role: user.role,
-            tenantId: user.tenant_id,
-            tenantSlug: user.tenant_slug
-          },
-          process.env.JWT_SECRET,
-          { expiresIn: '24h' }
-        );
+        let token;
+        try {
+          token = jwt.sign(
+            { 
+              userId: user.id,
+              email: user.email,
+              role: user.role,
+              tenantId: user.tenant_id,
+              tenantSlug: user.tenant_slug
+            },
+            JWT_SECRET,
+            { expiresIn: '24h' }
+          );
+        } catch (signErr) {
+          console.error('JWT signing error:', signErr);
+          return res.status(500).json({ error: 'Authentication token generation failed' });
+        }
 
         // Return user info and token
         res.json({
@@ -84,7 +91,7 @@ router.get('/me', (req, res) => {
     return res.status(401).json({ error: 'Access token required' });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
     if (err) {
       return res.status(403).json({ error: 'Invalid or expired token' });
     }
