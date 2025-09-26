@@ -7,6 +7,7 @@
   "routes": [
     { "src": "^/(auth|notes|tenants)(/.*)?$", "dest": "/server.js" },
     { "src": "^/api/health$", "dest": "/server.js" },
-    { "src": "/(.*)", "dest": "/public/$1" }
+    { "handle": "filesystem" },
+    { "src": "^(?!/(auth|notes|tenants|api)).*", "dest": "/index.html" }
   ]
 }
