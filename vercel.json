@@ -7,18 +7,9 @@
     }
   ],
   "routes": [
-    {
-      "src": "/health",
-      "dest": "/index.js"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "/index.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.js"
-    }
+    { "src": "/health", "dest": "/index.js" },
+    { "src": "/api/(.*)", "dest": "/index.js" },
+    { "src": "/(.*)", "dest": "/index.js" }
   ],
   "env": {
     "NODE_ENV": "production"
