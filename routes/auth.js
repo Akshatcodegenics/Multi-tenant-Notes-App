@@ -57,49 +57,52 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Register endpoint (for testing purposes)
+// Register endpoint (in-memory demo)
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, role = 'MEMBER', tenantSlug } = req.body;
+    const { email, password, tenantName, tenantSlug } = req.body;
 
-    if (!email || !password || !tenantSlug) {
+    if (!email || !password || !tenantName) {
       return res.status(400).json({ 
-        error: 'Email, password, and tenant slug are required' 
+        error: 'Email, password, and tenant name are required' 
       });
     }
 
-    // Find tenant
-    const tenant = await Tenant.findOne({ slug: tenantSlug.toLowerCase() });
-    if (!tenant) {
-      return res.status(404).json({ error: 'Tenant not found' });
+    const slug = (tenantSlug || tenantName)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+
+    // Ensure email is globally unique in this demo
+    const existingByEmail = db.findUserByEmail(email);
+    if (existingByEmail) {
+      return res.status(409).json({ error: 'User already exists' });
     }
 
-    // Check if user already exists for this tenant
-    const existingUser = await User.findOne({ 
+    // Create tenant (slug must be unique)
+    let tenant;
+    try {
+      tenant = db.createTenant({ name: tenantName.trim(), slug, subscription: 'FREE' });
+    } catch (e) {
+      if (e && e.message === 'TENANT_EXISTS') {
+        return res.status(409).json({ error: 'Tenant slug already exists' });
+      }
+      throw e;
+    }
+
+    // Hash password and create user as ADMIN (tenant owner)
+    const passwordHash = await bcrypt.hash(password, 12);
+    const user = db.createUser({ 
       email: email.toLowerCase(), 
+      password: passwordHash, 
+      role: 'ADMIN',
       tenantId: tenant._id 
     });
-
-    if (existingUser) {
-      return res.status(409).json({ 
-        error: 'User already exists for this tenant' 
-      });
-    }
-
-    // Create new user
-    const user = new User({
-      email: email.toLowerCase(),
-      password,
-      role: ['ADMIN', 'MEMBER'].includes(role) ? role : 'MEMBER',
-      tenantId: tenant._id
-    });
-
-    await user.save();
 
     // Generate JWT token
     const token = generateToken(user._id, tenant._id, user.role);
 
-    res.status(201).json({
+    return res.status(201).json({
       message: 'Registration successful',
       token,
       user: {
@@ -116,14 +119,7 @@ router.post('/register', async (req, res) => {
     });
   } catch (error) {
     console.error('Registration error:', error);
-    
-    if (error.code === 11000) {
-      return res.status(409).json({ 
-        error: 'User already exists for this tenant' 
-      });
-    }
-    
-    res.status(500).json({ error: 'Registration failed' });
+    return res.status(500).json({ error: 'Registration failed' });
   }
 });
 

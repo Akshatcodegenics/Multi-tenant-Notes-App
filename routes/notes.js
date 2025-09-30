@@ -132,19 +132,18 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Get a specific note by ID
+// Get a specific note by ID (in-memory)
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const note = await Note.findOne({ 
-      _id: id, 
-      tenantId: req.user.tenantId 
-    }).populate('userId', 'email role');
+    const note = db.findNote({ _id: id, tenantId: req.user.tenantId });
 
     if (!note) {
       return res.status(404).json({ error: 'Note not found' });
     }
+
+    const author = db.findUser({ _id: note.userId });
 
     res.json({
       note: {
@@ -153,25 +152,16 @@ router.get('/:id', async (req, res) => {
         content: note.content,
         createdAt: note.createdAt,
         updatedAt: note.updatedAt,
-        author: {
-          id: note.userId._id,
-          email: note.userId.email,
-          role: note.userId.role
-        }
+        author: author ? { id: author._id, email: author.email, role: author.role } : null
       }
     });
   } catch (error) {
     console.error('Get note error:', error);
-    
-    if (error.name === 'CastError') {
-      return res.status(400).json({ error: 'Invalid note ID' });
-    }
-    
     res.status(500).json({ error: 'Failed to get note' });
   }
 });
 
-// Update a note
+// Update a note (in-memory)
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -196,80 +186,65 @@ router.put('/:id', async (req, res) => {
     }
 
     // Find note and ensure tenant isolation
-    const note = await Note.findOne({ 
-      _id: id, 
-      tenantId: req.user.tenantId 
-    });
+    const existing = db.findNote({ _id: id, tenantId: req.user.tenantId });
 
-    if (!note) {
+    if (!existing) {
       return res.status(404).json({ error: 'Note not found' });
     }
 
     // Check if user can edit this note (only the author can edit)
-    if (note.userId.toString() !== req.user.id.toString()) {
+    if (existing.userId !== req.user.id) {
       return res.status(403).json({ 
         error: 'Access denied - you can only edit your own notes' 
       });
     }
 
     // Update the note
-    note.title = title.trim();
-    note.content = content.trim();
-    await note.save();
+    const updated = db.updateNote(id, { 
+      title: title.trim(),
+      content: content.trim()
+    });
 
-    // Populate user information for response
-    await note.populate('userId', 'email role');
+    const author = db.findUser({ _id: updated.userId });
 
     res.json({
       message: 'Note updated successfully',
       note: {
-        id: note._id,
-        title: note.title,
-        content: note.content,
-        createdAt: note.createdAt,
-        updatedAt: note.updatedAt,
-        author: {
-          id: note.userId._id,
-          email: note.userId.email,
-          role: note.userId.role
-        }
+        id: updated._id,
+        title: updated.title,
+        content: updated.content,
+        createdAt: updated.createdAt,
+        updatedAt: updated.updatedAt,
+        author: author ? { id: author._id, email: author.email, role: author.role } : null
       }
     });
   } catch (error) {
     console.error('Update note error:', error);
-    
-    if (error.name === 'CastError') {
-      return res.status(400).json({ error: 'Invalid note ID' });
-    }
-    
     res.status(500).json({ error: 'Failed to update note' });
   }
 });
 
-// Delete a note
+// Delete a note (in-memory)
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
     // Find note and ensure tenant isolation
-    const note = await Note.findOne({ 
-      _id: id, 
-      tenantId: req.user.tenantId 
-    });
+    const existing = db.findNote({ _id: id, tenantId: req.user.tenantId });
 
-    if (!note) {
+    if (!existing) {
       return res.status(404).json({ error: 'Note not found' });
     }
 
     // Check if user can delete this note (only the author can delete)
-    if (note.userId.toString() !== req.user.id.toString()) {
+    if (existing.userId !== req.user.id) {
       return res.status(403).json({ 
         error: 'Access denied - you can only delete your own notes' 
       });
     }
 
     // Delete the note
-    await Note.deleteOne({ _id: id });
+    db.deleteNote(id);
 
     res.json({
       message: 'Note deleted successfully',
@@ -277,11 +252,6 @@ router.delete('/:id', async (req, res) => {
     });
   } catch (error) {
     console.error('Delete note error:', error);
-    
-    if (error.name === 'CastError') {
-      return res.status(400).json({ error: 'Invalid note ID' });
-    }
-    
     res.status(500).json({ error: 'Failed to delete note' });
   }
 });

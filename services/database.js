@@ -165,6 +165,45 @@ class InMemoryDatabase {
     return note;
   }
 
+  createTenant({ name, slug, subscription = 'FREE' }) {
+    const existing = this.findTenant({ slug });
+    if (existing) {
+      throw new Error('TENANT_EXISTS');
+    }
+    const tenant = {
+      _id: this.generateId(),
+      name,
+      slug,
+      subscription,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    this.data.tenants.push(tenant);
+    return tenant;
+  }
+
+  findUserByEmail(email) {
+    return this.data.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+  }
+
+  createUser({ email, password, role = 'MEMBER', tenantId }) {
+    const existing = this.findUserByEmail(email);
+    if (existing) {
+      throw new Error('USER_EXISTS');
+    }
+    const user = {
+      _id: this.generateId(),
+      email: email.toLowerCase(),
+      password, // already hashed upstream
+      role,
+      tenantId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    this.data.users.push(user);
+    return user;
+  }
+
   // Update methods
   updateNote(id, updateData) {
     const noteIndex = this.data.notes.findIndex(note => note._id === id);

@@ -45,6 +45,14 @@ export const authAPI = {
     return response.data;
   },
 
+  register: async (email: string, password: string, tenantName: string, tenantSlug?: string) => {
+    const response = await api.post('/api/auth/register', { email, password, tenantName, tenantSlug });
+    if (response.data.token) {
+      Cookies.set('token', response.data.token, { expires: 1 });
+    }
+    return response.data;
+  },
+
   logout: () => {
     Cookies.remove('token');
   },

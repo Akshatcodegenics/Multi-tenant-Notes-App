@@ -103,8 +103,12 @@ export default function LoginPage() {
             </button>
           </form>
 
+          <div className="text-center mt-6 text-white text-opacity-80 text-sm">
+            New here? <a href="/signup" className="text-blue-400 underline">Create an account</a>
+          </div>
+
           {/* Test Accounts Section */}
-          <div className="mt-8 p-4 bg-white bg-opacity-5 rounded-xl border border-white border-opacity-10">
+          <div className="mt-6 p-4 bg-white bg-opacity-5 rounded-xl border border-white border-opacity-10">
             <h3 className="font-semibold mb-4 text-white text-center flex items-center justify-center">
               <span className="text-lg mr-2">🧪</span>
               Demo Accounts
