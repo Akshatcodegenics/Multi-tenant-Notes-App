@@ -1,0 +1,96 @@
+{
+  "tenants": [
+    {
+      "id": "tenant-acme-123",
+      "name": "Acme Corporation",
+      "slug": "acme",
+      "subscription": "FREE",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "tenant-globex-456", 
+      "name": "Globex Corporation",
+      "slug": "globex",
+      "subscription": "FREE",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    }
+  ],
+  "users": [
+    {
+      "id": "user-acme-admin-1",
+      "email": "admin@acme.test",
+      "password": "$2b$12$6zQqjQmXqWKhA8D7l9mJ1uEXqK6pJjz8gYvyTx9.iJl.AzBxDx9lO",
+      "role": "ADMIN",
+      "tenantId": "tenant-acme-123",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "user-acme-member-2",
+      "email": "user@acme.test", 
+      "password": "$2b$12$6zQqjQmXqWKhA8D7l9mJ1uEXqK6pJjz8gYvyTx9.iJl.AzBxDx9lO",
+      "role": "MEMBER",
+      "tenantId": "tenant-acme-123",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "user-globex-admin-3",
+      "email": "admin@globex.test",
+      "password": "$2b$12$6zQqjQmXqWKhA8D7l9mJ1uEXqK6pJjz8gYvyTx9.iJl.AzBxDx9lO", 
+      "role": "ADMIN",
+      "tenantId": "tenant-globex-456",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "user-globex-member-4",
+      "email": "user@globex.test",
+      "password": "$2b$12$6zQqjQmXqWKhA8D7l9mJ1uEXqK6pJjz8gYvyTx9.iJl.AzBxDx9lO",
+      "role": "MEMBER", 
+      "tenantId": "tenant-globex-456",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    }
+  ],
+  "notes": [
+    {
+      "id": "note-acme-1",
+      "title": "Welcome to Acme Notes",
+      "content": "This is your first note in the Acme tenant. You can create, edit, and delete notes here. The interface is beautiful and modern!",
+      "userId": "user-acme-admin-1",
+      "tenantId": "tenant-acme-123",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "note-acme-2", 
+      "title": "Team Meeting Notes",
+      "content": "Discussion about Q4 goals and project timelines. Remember to follow up on action items. Great progress so far!",
+      "userId": "user-acme-member-2",
+      "tenantId": "tenant-acme-123",
+      "createdAt": "2024-01-02T00:00:00.000Z",
+      "updatedAt": "2024-01-02T00:00:00.000Z"
+    },
+    {
+      "id": "note-globex-1",
+      "title": "Globex Project Overview", 
+      "content": "Initial planning for the new product launch. Market research indicates strong demand. The multi-tenant architecture is working perfectly!",
+      "userId": "user-globex-admin-3",
+      "tenantId": "tenant-globex-456",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "note-globex-2",
+      "title": "Daily Standup Notes",
+      "content": "Progress on current sprint. All tasks on track for completion by Friday. The new UI looks amazing!",
+      "userId": "user-globex-member-4", 
+      "tenantId": "tenant-globex-456",
+      "createdAt": "2024-01-02T00:00:00.000Z",
+      "updatedAt": "2024-01-02T00:00:00.000Z"
+    }
+  ]
+}
