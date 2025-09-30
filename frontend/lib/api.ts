@@ -1,7 +1,8 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+// Default to same-origin in production; set NEXT_PUBLIC_API_URL in dev for cross-origin
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 // Create axios instance
 const api = axios.create({
